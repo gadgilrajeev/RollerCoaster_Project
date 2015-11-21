@@ -1,13 +1,17 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <stdio.h>
-#include "tiny_obj_loader.h"
-
-/*#include "stglew.h"
-#include "glut.h"
 #include <iostream>
-#include "tiny_obj_loader.h"
-*/
+#include <assert.h>
+#include <GL\freeglut.h>
+#include <GL\GL.h>
+#include <GL\GLU.h>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <stdio.h>
+#include <fstream>
+
 
 
 enum{
@@ -22,15 +26,40 @@ enum{
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
+int coasterMesh;
+
+struct coordinate{
+	float x, y, z;
+	coordinate(float a, float b, float c): x(a),y(b),z(c) {};
+};
+
+struct face{
+	int facenum;
+	bool four;
+	int faces[4];
+	face(int facen, int f1, int f2, int f3):facenum(facen){
+		faces[0] = f1;
+		faces[1] = f2;
+		faces[2] = f3;
+		four = false;
+	}
+	face(int facen, int f1, int f2, int f3, int f4):facenum(facen){
+		faces[0] = f1;
+		faces[1] = f2;
+		faces[2] = f3;
+		faces[3] = f4;
+		four = true;
+	}
+};
 
 
-/*void renderScene(void){
+void renderScene(void){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0, 0.3, 0.3, 1.0);
 	glutSwapBuffers();
 }
 
-void InitDisplay(){
+/*void InitDisplay(){
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(500, 500);
 	glutInitWindowSize(800, 600);
@@ -51,60 +80,90 @@ void InitDisplay(){
 	glutMainLoop();
 
 	return;
-}
-void LoadFromObj(){
-	std::string inputfile = "RollerCoasterTrack.obj";
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string materialBase = "";
+}*/
 
-	std::string err = tinyobj::LoadObj(shapes, materials, materialBase.c_str(), inputfile.c_str());
+int loadMyObject(const char* filename){
+	std::vector<std::string*> coord;
+	std::vector<coordinate*> vertex;
+	std::vector<face*> faces;
+	std::vector<coordinate*> normals;
+	std::ifstream in(filename);
 
-	if (!err.empty()) {
-	  std::cerr << err << std::endl;
-	  exit(1);
+	if(!in.is_open()){
+		printf("Unable to open file!\n");
+		return -1;
 	}
 
-	std::cout << "# of shapes : " << shapes.size() << std::endl;
+	char c[256];
+	while(!in.eof()){
+		in.getline(c, 256);
+		coord.push_back(new std::string(c));
+	}
+	for (int i = 0; i < coord.size(); i++){
+		if((*coord[i])[0] == '#'){
+			continue;
+		} else if ((*coord[i])[0] =='v' && (*coord[i])[1] == ' '){
+			float tmpx, tmpy, tmpz;
+			sscanf(coord[i]->c_str(), "v %f %f %f", &tmpx, &tmpy, &tmpz);
+			vertex.push_back(new coordinate(tmpx, tmpy, tmpz));
+		} else if((*coord[i])[0] == 'v' && (*coord[i])[1] == 'n'){
+			float tmpx, tmpy, tmpz;
+			sscanf(coord[i]->c_str(), "vn %f %f %f", &tmpx, &tmpy, &tmpz);
+			normals.push_back(new coordinate(tmpz, tmpy, tmpz));
+		} else if((*coord[i])[0] == 'f'){
+			int a, b, c, d, e;
+			if (count(coord[i]->begin(), coord[i]->end(), ' ') == 4){
+				sscanf(coord[i]->c_str(), "f %d//%d %d//%d %d//%d %d//%d", &a, &b, &c, &b, &d, &b, &e, &b);
+				faces.push_back(new face(b, a, c, d, e));
+			} else{
+				sscanf(coord[i]->c_str(), "f %d//%d %d//%d %d//%d", &a, &b, &c, &b, &d, &b);
+				faces.push_back(new face(b, a, c, d));
+			}
+		}
+	}
 
-	for (size_t i = 0; i < shapes.size(); i++) {
-	  printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
-	  printf("shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
-	  assert((shapes[i].mesh.indices.size() % 3) == 0);
-	  for (size_t f = 0; f < shapes[i].mesh.indices.size(); f++) {
-		printf("  idx[%ld] = %d\n", f, shapes[i].mesh.indices[f]);
-	  }
+	//Drawing the faces, vertices
+	int num;
+	num = glGenLists(1);
+	glNewList(num, GL_COMPILE);
 
-	  printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
-	  assert((shapes[i].mesh.positions.size() % 3) == 0);
-	  for (size_t v = 0; v < shapes[i].mesh.positions.size() / 3; v++) {
-		printf("  v[%ld] = (%f, %f, %f)\n", v,
-		  shapes[i].mesh.positions[3*v+0],
-		  shapes[i].mesh.positions[3*v+1],
-		  shapes[i].mesh.positions[3*v+2]);
-	  }
+	for(int i = 0; i < faces.size(); i++){
+		if (faces[i]->four){
+			glBegin(GL_QUADS);
+				glColor3f(1.0, 0.0, 0.0);
+				glNormal3f(normals[faces[i]->facenum - 1]->x, normals[faces[i]->facenum - 1]->y, normals[faces[i]->facenum - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[0] - 1]->x, vertex[faces[i]->faces[0] - 1]->y, vertex[faces[i]->faces[0] - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[1] - 1]->x, vertex[faces[i]->faces[1] - 1]->y, vertex[faces[i]->faces[1] - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[2] - 1]->x, vertex[faces[i]->faces[2] - 1]->y, vertex[faces[i]->faces[2] - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[3] - 1]->x, vertex[faces[i]->faces[3] - 1]->y, vertex[faces[i]->faces[3] - 1]->z);
+			glEnd();
+		} else {
+			glBegin(GL_TRIANGLES);
+				glNormal3f(normals[faces[i]->facenum - 1]->x, normals[faces[i]->facenum - 1]->y, normals[faces[i]->facenum - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[0] - 1]->x, vertex[faces[i]->faces[0] - 1]->y, vertex[faces[i]->faces[0] - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[1] - 1]->x, vertex[faces[i]->faces[1] - 1]->y, vertex[faces[i]->faces[1] - 1]->z);
+				glVertex3f(vertex[faces[i]->faces[2] - 1]->x, vertex[faces[i]->faces[2] - 1]->y, vertex[faces[i]->faces[2] - 1]->z);
+			glEnd();
+		}
+	}
 
-	  printf("shape[%ld].material.name = %s\n", i, shapes[i].material.name.c_str());
-	  printf("  material.Ka = (%f, %f ,%f)\n", shapes[i].material.ambient[0], shapes[i].material.ambient[1], shapes[i].material.ambient[2]);
-	  printf("  material.Kd = (%f, %f ,%f)\n", shapes[i].material.diffuse[0], shapes[i].material.diffuse[1], shapes[i].material.diffuse[2]);
-	  printf("  material.Ks = (%f, %f ,%f)\n", shapes[i].material.specular[0], shapes[i].material.specular[1], shapes[i].material.specular[2]);
-	  printf("  material.Tr = (%f, %f ,%f)\n", shapes[i].material.transmittance[0], shapes[i].material.transmittance[1], shapes[i].material.transmittance[2]);
-	  printf("  material.Ke = (%f, %f ,%f)\n", shapes[i].material.emission[0], shapes[i].material.emission[1], shapes[i].material.emission[2]);
-	  printf("  material.Ns = %f\n", shapes[i].material.shininess);
-	  printf("  material.map_Ka = %s\n", shapes[i].material.ambient_texname.c_str());
-	  printf("  material.map_Kd = %s\n", shapes[i].material.diffuse_texname.c_str());
-	  printf("  material.map_Ks = %s\n", shapes[i].material.specular_texname.c_str());
-	  printf("  material.map_Ns = %s\n", shapes[i].material.normal_texname.c_str());
-	  std::map<std::string, std::string>::iterator it(shapes[i].material.unknown_parameter.begin());
-	  std::map<std::string, std::string>::iterator itEnd(shapes[i].material.unknown_parameter.end());
-	  for (; it != itEnd; it++) {
-		printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
-	  }
-	  printf("\n");
+	glEndList();
+
+	for(int i = 0; i < coord.size(); i++){
+		delete coord[i];
+	}
+	for (int i = 0; i < vertex.size(); i++){
+		delete vertex[i];
+	}
+	for (int i = 0; i < normals.size(); i++){
+		delete normals[i];
+	}
+	for (int i = 0; i < faces.size(); i++){
+		delete faces[i];
+	}
+
+	return num;
 }
-
-	return;
-}*/
 
 GLuint LoadSkyboxFile(const char *fileName)
 {
@@ -227,7 +286,6 @@ void draw_ground()
 
 
 void display(){
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glColor4f(1.0,1.0,1.0,1.0);
 	glLoadIdentity();
@@ -236,6 +294,7 @@ void display(){
 	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
 	glTranslatef(movcord[0],movcord[1],movcord[2]);
 	draw_ground();
+	glCallList(coasterMesh);
 	glPushMatrix();
 	glTranslatef(80,0,165);
 	glutSwapBuffers();
@@ -258,7 +317,8 @@ int main(int argc, char** argv)
 		glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);
 		glutInitWindowSize(800,600);
 		glutCreateWindow("CAP5705 Project");
-		initEnvironment();
+	//	initEnvironment();
+		coasterMesh = loadMyObject("OBJ/merryGoRound.obj");
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 		glutMainLoop();
