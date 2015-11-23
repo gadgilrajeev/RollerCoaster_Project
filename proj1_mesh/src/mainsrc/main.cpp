@@ -26,7 +26,7 @@ enum{
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
-int coasterMesh;
+int coasterMesh, carouselMesh;
 
 struct coordinate{
 	float x, y, z;
@@ -130,7 +130,7 @@ int loadMyObject(const char* filename){
 	for(int i = 0; i < faces.size(); i++){
 		if (faces[i]->four){
 			glBegin(GL_QUADS);
-				glColor3f(1.0, 0.0, 0.0);
+				glColor3f(0.5, 0.5, 0.5);
 				glNormal3f(normals[faces[i]->facenum - 1]->x, normals[faces[i]->facenum - 1]->y, normals[faces[i]->facenum - 1]->z);
 				glVertex3f(vertex[faces[i]->faces[0] - 1]->x, vertex[faces[i]->faces[0] - 1]->y, vertex[faces[i]->faces[0] - 1]->z);
 				glVertex3f(vertex[faces[i]->faces[1] - 1]->x, vertex[faces[i]->faces[1] - 1]->y, vertex[faces[i]->faces[1] - 1]->z);
@@ -290,13 +290,14 @@ void display(){
 	glColor4f(1.0,1.0,1.0,1.0);
 	glLoadIdentity();
 	gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
-	glRotatef(x_r, 0, 1, 0);
+//	glRotatef(x_r, 0, 1, 0);
 	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
-	glTranslatef(movcord[0],movcord[1],movcord[2]);
+//	glTranslatef(movcord[0],movcord[1],movcord[2]);
 	draw_ground();
 	glCallList(coasterMesh);
+	glCallList(carouselMesh);
 	glPushMatrix();
-	glTranslatef(80,0,165);
+//	glTranslatef(80,0,165);
 	glutSwapBuffers();
 }
 
@@ -305,7 +306,8 @@ void displayReshape(int width,int height)
 	glViewport(0,0,width,height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(65,(GLfloat)width/(GLfloat)height,0.01f,1000.0f);
+//	gluPerspective(65,(GLfloat)width/(GLfloat)height,0.01f,1000.0f);
+	gluPerspective(65, (GLfloat)width/(GLfloat)height, 0.0f, 100.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
@@ -317,8 +319,9 @@ int main(int argc, char** argv)
 		glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);
 		glutInitWindowSize(800,600);
 		glutCreateWindow("CAP5705 Project");
-	//	initEnvironment();
-		coasterMesh = loadMyObject("OBJ/merryGoRound.obj");
+		initEnvironment();
+		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
+		carouselMesh = loadMyObject("OBJ/merryGoRound.obj");
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 		glutMainLoop();
