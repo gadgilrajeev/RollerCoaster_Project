@@ -1,18 +1,21 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <stdio.h>
+#include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
-#include <GL\freeglut.h>
+/*#include <GL\freeglut.h>
 #include <GL\GL.h>
-#include <GL\GLU.h>
+#include <GL\GLU.h>*/
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <stdio.h>
 #include <fstream>
-
-
+#include <math.h>
+#include "../libst/include/STVector3.h"
+#include "../libst/include/STImage.h"
+#include "../libst/include/STMatrix4.h"
 
 enum{
 	SKY_FRONT=0,
@@ -22,12 +25,20 @@ enum{
 	SKY_UP=4,
 	SKY_DOWN=5,
 };
+int gPreviousMouseX = -1;
+int gPreviousMouseY = -1;
+int gMouseButton = -1;
+
+STVector3 mPosition;
+STVector3 mLookAt;
+STVector3 mRight;
+STVector3 mUp;
 
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
 int coasterMesh, carouselMesh;
-
+int show_menu = 1;
 struct coordinate{
 	float x, y, z;
 	coordinate(float a, float b, float c): x(a),y(b),z(c) {};
@@ -53,18 +64,47 @@ struct face{
 };
 
 
+
+void SetUpAndRight()
+{
+    mRight = STVector3::Cross(mLookAt - mPosition, mUp);
+    mRight.Normalize();
+    mUp = STVector3::Cross(mRight, mLookAt - mPosition);
+    mUp.Normalize();
+}
+
+void resetCamera()
+{
+    mLookAt=STVector3(1.f,0.f,0.f);
+    mPosition=STVector3(0.f,0.f,0.f);
+    mUp=STVector3(0.f,1.f,0.f);
+
+    //SetUpAndRight();
+}
+
+void resetUp()
+{
+    mUp = STVector3(0.f,1.f,0.f);
+    mRight = STVector3::Cross(mLookAt - mPosition, mUp);
+    mRight.Normalize();
+    mUp = STVector3::Cross(mRight, mLookAt - mPosition);
+    mUp.Normalize();
+}
+
+
 void renderScene(void){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0, 0.3, 0.3, 1.0);
 	glutSwapBuffers();
 }
 
+
+
 /*void InitDisplay(){
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(500, 500);
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("OpenGL First Window");
-
 	glewInit();
 	if (glewIsSupported("GL_VERSION_2_0")){
 		std::cout << " GLEW Version is 2.0\n ";
@@ -72,13 +112,10 @@ void renderScene(void){
 	else{
 	   std::cout << "GLEW 2.0 not supported\n ";
 	}
-
 	glEnable(GL_DEPTH_TEST);
 	// register callbacks
 	glutDisplayFunc(renderScene);
-
 	glutMainLoop();
-
 	return;
 }*/
 
@@ -283,22 +320,151 @@ void draw_ground()
 	glTranslatef(0.0, 2, 0.0);
 }
 
+/**
+ * Camera adjustment methods
+ */
+void RotateCamera(float delta_x, float delta_y)
+{
+    float yaw_rate=1.f;
+    float pitch_rate=1.f;
+
+    mPosition -= mLookAt;
+    STMatrix4 m;
+    m.EncodeR(-1*delta_x*yaw_rate, mUp);
+    mPosition = m * mPosition;
+    m.EncodeR(-1*delta_y*pitch_rate, mRight);
+    mPosition = m * mPosition;
+
+    mPosition += mLookAt;
+}
+
+void ZoomCamera(float delta_y)
+{
+    STVector3 direction = mLookAt - mPosition;
+    float magnitude = direction.Length();
+    direction.Normalize();
+    float zoom_rate = 0.1f*magnitude < 0.5f ? .1f*magnitude : .5f;
+    if(delta_y * zoom_rate + magnitude > 0)
+    {
+        mPosition += (delta_y * zoom_rate) * direction;
+    }
+}
+
+void StrafeCamera(float delta_x, float delta_y)
+{
+    float strafe_rate = 0.05f;
+
+    mPosition -= strafe_rate * delta_x * mRight;
+    mLookAt   -= strafe_rate * delta_x * mRight;
+    mPosition += strafe_rate * delta_y * mUp;
+    mLookAt   += strafe_rate * delta_y * mUp;
+}
+
+void SpecialKeyCallback(int key, int x, int y)
+{
+    switch(key) {
+        case GLUT_KEY_LEFT:
+            StrafeCamera(10,0);
+            break;
+        case GLUT_KEY_RIGHT:
+            StrafeCamera(-10,0);
+            break;
+        case GLUT_KEY_DOWN:
+            StrafeCamera(0,-10);
+            break;
+        case GLUT_KEY_UP:
+            StrafeCamera(0,10);
+            break;
+        default:
+            break;
+    }
+    glutPostRedisplay();
+}
+
+void KeyCallback(unsigned char key, int x, int y)
+{
+    // TO DO: Any new key press events must be added to this function
+    switch(key) {
+    case '+':
+    	movcord[1] += 5;
+    	break;
+    case '-':
+    	movcord[1]-=5;
+    	break;
+    case 'b':
+        break;
+    case 'w':
+    	mLookAt.x +=1;
+    	break;
+    case 'x':
+    	mLookAt.x -=1;
+    	break;
+    case 'y':
+    	mLookAt.y += 1;
+    	break;
+    case 'z':
+    	mLookAt.y -= 1;
+    	break;
+    case 'e':
+     	mLookAt.z += 1;
+     	break;
+    case 'f':
+     	mLookAt.z -= 1;
+     	break;
+    case 's': {
+            //
+            // Take a screenshot, and save as screenshot.jpg
+            //
+            STImage* screenshot = new STImage(800, 600);
+            screenshot->Read(0,0);
+            screenshot->Save("../../data/images/screenshot.jpg");
+            delete screenshot;
+        }
+        break;
+    case 'r':
+        resetCamera();
+        break;
+    case 'u':
+        resetUp();
+        break;
+	case 'q':
+		exit(0);
+    default:
+        break;
+    }
+
+    glutPostRedisplay();
+}
+
 
 
 void display(){
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glColor4f(1.0,1.0,1.0,1.0);
 	glLoadIdentity();
-	gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
-//	glRotatef(x_r, 0, 1, 0);
+	//gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
+	//SetUpAndRight();
+    gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
+    			mPosition.x,mPosition.y,mPosition.z,
+              mUp.x,mUp.y,mUp.z);
+
 	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
-//	glTranslatef(movcord[0],movcord[1],movcord[2]);
+	//Draw_Skybox(mLookAt.x+(0.05*movcord[0]),mLookAt.y+(0.05*movcord[1]),mLookAt.z+(0.05*movcord[2]),250,250,250);
+
 	draw_ground();
 	glCallList(coasterMesh);
 	glCallList(carouselMesh);
 	glPushMatrix();
-//	glTranslatef(80,0,165);
+
 	glutSwapBuffers();
+}
+
+
+void idle()
+{
+	display();
+
 }
 
 void displayReshape(int width,int height)
@@ -319,13 +485,16 @@ int main(int argc, char** argv)
 		glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);
 		glutInitWindowSize(800,600);
 		glutCreateWindow("CAP5705 Project");
+	    resetCamera();
+
 		initEnvironment();
 		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
 		carouselMesh = loadMyObject("OBJ/merryGoRound.obj");
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
+	    glutSpecialFunc(SpecialKeyCallback);
+	    glutKeyboardFunc(KeyCallback);
+  		glutDisplayFunc(display);
 		glutMainLoop();
 		return 0;
 }
-
-
