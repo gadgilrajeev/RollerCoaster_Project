@@ -29,6 +29,8 @@ int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
 
+
+
 STVector3 mPosition;
 STVector3 mLookAt;
 STVector3 mRight;
@@ -37,9 +39,8 @@ STVector3 mUp;
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
-int coasterMesh, carouselMesh, barMesh;
+int coasterMesh, coasterBarsMesh,carouselMesh;
 int show_menu = 1;
-
 struct coordinate{
 	float x, y, z;
 	coordinate(float a, float b, float c): x(a),y(b),z(c) {};
@@ -64,7 +65,14 @@ struct face{
 	}
 };
 
+std::vector<std::string*> coast_coord;
+std::vector<coordinate*> coast_vertex;
 
+void PlaceCameraAtRollerCoaster(void){
+	mPosition = STVector3(7.5,0.5,25);
+	mLookAt	  = STVector3(7.5,0.5,23);
+	//mUp		  = STVector3(0.0,0.0,1.0);
+}
 
 void SetUpAndRight()
 {
@@ -119,6 +127,53 @@ void renderScene(void){
 	glutMainLoop();
 	return;
 }*/
+void BuildCoasterPosition(const char* filename){
+	std::ifstream in(filename);
+
+	if(!in.is_open()){
+		printf("Unable to open file!\n");
+		return;
+	}
+
+	char c[256];
+	while(!in.eof()){
+		in.getline(c, 256);
+		coast_coord.push_back(new std::string(c));
+	}
+	for (int i = 0; i < coast_coord.size(); i++){
+		float tmpx, tmpy, tmpz;
+		sscanf(coast_coord[i]->c_str(), "%f %f %f", &tmpx, &tmpy, &tmpz);
+		coast_vertex.push_back(new coordinate(tmpx, tmpy, tmpz));
+		printf("A = %f, B = %f, C = %f\n",tmpx, tmpy, tmpz);
+	}
+
+}
+
+void MoveRollerCoaster(void){
+	coordinate *current, *next;
+	static int i = 0;
+	if(i < (coast_vertex.size()-1)){
+		next = coast_vertex.at(i);
+		current 	= coast_vertex.at(i+1);
+	}
+	else{
+		i = 0;
+		next = coast_vertex.at(i);
+		current 	= coast_vertex.at(i+1);
+	}
+	mLookAt.x = next->x;
+	mLookAt.y = next->y;
+	mLookAt.z = next->z;
+
+	mPosition.x = current->x;
+	mPosition.y = current->y;
+	mPosition.z = current->z;
+
+	i++;
+
+	printf("%f %f %f --- %f %f %f\n",mLookAt.x,mLookAt.y,mLookAt.z,mPosition.x,mPosition.y,mPosition.z);
+	//while(1);
+}
 
 int loadMyObject(const char* filename){
 	std::vector<std::string*> coord;
@@ -382,17 +437,24 @@ void SpecialKeyCallback(int key, int x, int y)
     glutPostRedisplay();
 }
 
+
+
+void MoveCarousel(void){
+
+}
 void KeyCallback(unsigned char key, int x, int y)
 {
     // TO DO: Any new key press events must be added to this function
     switch(key) {
     case '+':
-    	movcord[1] += 5;
+    	MoveRollerCoaster();
     	break;
     case '-':
-    	movcord[1]-=5;
+    	MoveCarousel();
     	break;
     case 'b':
+    	PlaceCameraAtRollerCoaster();
+
         break;
     case 'w':
     	mLookAt.x +=1;
@@ -456,14 +518,16 @@ void display(){
 	draw_ground();
 	glCallList(coasterMesh);
 	glCallList(carouselMesh);
-	glCallList(barMesh);
+	glCallList(coasterBarsMesh);
 	glPushMatrix();
+
 	glutSwapBuffers();
 }
 
 
 void idle()
 {
+	MoveRollerCoaster();
 	display();
 
 }
@@ -480,23 +544,26 @@ void displayReshape(int width,int height)
 }
 
 
+
+
 int main(int argc, char** argv)
 {
 		glutInit(&argc,argv);
 		glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);
 		glutInitWindowSize(800,600);
 		glutCreateWindow("CAP5705 Project");
+		BuildCoasterPosition("OBJ/Barlocations.txt");
 	    resetCamera();
-
 		initEnvironment();
 		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
 		carouselMesh = loadMyObject("OBJ/merryGoRound.obj");
-		barMesh = loadMyObject("OBJ/CoasterBars.obj");
+		coasterBarsMesh = loadMyObject("OBJ/CoasterBars.obj");
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 	    glutSpecialFunc(SpecialKeyCallback);
 	    glutKeyboardFunc(KeyCallback);
   		glutDisplayFunc(display);
+  		glutIdleFunc(idle);
 		glutMainLoop();
 		return 0;
 }

@@ -1,6 +1,6 @@
 # Blender v2.76 (sub 0) OBJ File: 'RollerCoaster1.blend'
 # www.blender.org
-mtllib RollerCoasterBars.mtl
+mtllib CoasterBars.mtl
 o Cube
 v 6.903569 -0.095459 25.083527
 v 6.998185 0.071594 25.070629
