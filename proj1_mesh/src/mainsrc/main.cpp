@@ -37,8 +37,9 @@ STVector3 mUp;
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
-int coasterMesh, carouselMesh;
+int coasterMesh, carouselMesh, barMesh;
 int show_menu = 1;
+
 struct coordinate{
 	float x, y, z;
 	coordinate(float a, float b, float c): x(a),y(b),z(c) {};
@@ -455,8 +456,8 @@ void display(){
 	draw_ground();
 	glCallList(coasterMesh);
 	glCallList(carouselMesh);
+	glCallList(barMesh);
 	glPushMatrix();
-
 	glutSwapBuffers();
 }
 
@@ -490,6 +491,7 @@ int main(int argc, char** argv)
 		initEnvironment();
 		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
 		carouselMesh = loadMyObject("OBJ/merryGoRound.obj");
+		barMesh = loadMyObject("OBJ/CoasterBars.obj");
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 	    glutSpecialFunc(SpecialKeyCallback);
