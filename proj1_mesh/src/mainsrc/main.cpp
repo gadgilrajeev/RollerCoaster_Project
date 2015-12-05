@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <GL/glut.h>
+#include <glut.h>
 #include <stdio.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
@@ -28,7 +28,7 @@ enum{
 int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
-
+int FrameRate = 15;
 
 
 STVector3 mPosition;
@@ -127,6 +127,8 @@ void renderScene(void){
 	glutMainLoop();
 	return;
 }*/
+
+
 void BuildCoasterPosition(const char* filename){
 	std::ifstream in(filename);
 
@@ -147,32 +149,6 @@ void BuildCoasterPosition(const char* filename){
 		printf("A = %f, B = %f, C = %f\n",tmpx, tmpy, tmpz);
 	}
 
-}
-
-void MoveRollerCoaster(void){
-	coordinate *current, *next;
-	static int i = 0;
-	if(i < (coast_vertex.size()-1)){
-		next = coast_vertex.at(i);
-		current 	= coast_vertex.at(i+1);
-	}
-	else{
-		i = 0;
-		next = coast_vertex.at(i);
-		current 	= coast_vertex.at(i+1);
-	}
-	mLookAt.x = next->x;
-	mLookAt.y = next->y;
-	mLookAt.z = next->z;
-
-	mPosition.x = current->x;
-	mPosition.y = current->y;
-	mPosition.z = current->z;
-
-	i++;
-
-	printf("%f %f %f --- %f %f %f\n",mLookAt.x,mLookAt.y,mLookAt.z,mPosition.x,mPosition.y,mPosition.z);
-	//while(1);
 }
 
 int loadMyObject(const char* filename){
@@ -437,11 +413,124 @@ void SpecialKeyCallback(int key, int x, int y)
     glutPostRedisplay();
 }
 
+void display(){
 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glColor4f(1.0,1.0,1.0,1.0);
+	glLoadIdentity();
+	//gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
+	//SetUpAndRight();
+    gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
+    			mPosition.x,mPosition.y,mPosition.z,
+              mUp.x,mUp.y,mUp.z);
+
+	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
+	//Draw_Skybox(mLookAt.x+(0.05*movcord[0]),mLookAt.y+(0.05*movcord[1]),mLookAt.z+(0.05*movcord[2]),250,250,250);
+
+	draw_ground();
+	glCallList(coasterMesh);
+	glCallList(carouselMesh);
+	glCallList(coasterBarsMesh);
+	glPushMatrix();
+
+	glutSwapBuffers();
+}
+
+void interpolateFrames(coordinate init, coordinate fin, coordinate view){
+	for (int i = 0; i < FrameRate; i++){
+		float alpha = (float)i / FrameRate;
+		mPosition.x = init.x * alpha + fin.x *(1-alpha);
+		mPosition.y = init.y * alpha + fin.y *(1-alpha);
+		mPosition.z = init.z * alpha + fin.z *(1-alpha);
+
+		mLookAt.x = fin.x * alpha + view.x * (1-alpha);
+		mLookAt.y = fin.y * alpha + view.y * (1-alpha);
+		mLookAt.z = fin.z * alpha + view.z * (1-alpha);
+		
+		display();
+	}
+}
+
+void MoveRollerCoaster(void){
+	coordinate *current, *next, *further;
+	static int i = 0;
+	if(i < (coast_vertex.size()-2)){
+		further = coast_vertex.at(i);
+		next = coast_vertex.at(i+1);
+		current = coast_vertex.at(i+2);
+	}
+	else{
+		i = 0;
+		further = coast_vertex.at(i);
+		next = coast_vertex.at(i+1);
+		current = coast_vertex.at(i+2);
+	}
+
+	coordinate view(further->x, further->y, further->z);
+	coordinate init(current->x, current->y, current->z);
+	coordinate fin(next->x, next->y, next->z);
+
+	interpolateFrames(init, fin, view);
+
+	/*mLookAt.x = next->x;
+	mLookAt.y = next->y;
+	mLookAt.z = next->z;
+
+	mPosition.x = current->x;
+	mPosition.y = current->y;
+	mPosition.z = current->z;*/
+
+	i++;
+
+	printf("Keyframe : %f %f %f --- %f %f %f\n",mLookAt.x,mLookAt.y,mLookAt.z,mPosition.x,mPosition.y,mPosition.z);
+	//while(1);
+}
 
 void MoveCarousel(void){
+	coordinate *center, *view, *init, *fin;
+	float radius = 4.0;
+	float pi = 3.1415;
 
+	center = &coordinate(0, 0, 0);
+
+	float z1 = 2.0;
+	float z2 = 4.0;
+
+	int i = 0;
+
+	while(true){
+		if(i >= 22){
+			i = 0;
+		}
+
+		init->x = center->x + radius * cos(2 * i * pi /24);
+		init->y = center->y + radius * sin(2 * i * pi /24);
+		init->z = z1;
+
+		if (i % 2 == 1){
+			init->z = z2;
+		}
+
+		fin->x = center->x + radius * cos(2 * (i+1) * pi /24);
+		fin->y = center->y + radius * sin(2 * (i+1) * pi /24);
+		fin->z = z2;
+
+		if (i % 2 == 1){
+			fin->z = z1;
+		}
+
+		view->x = center->x + 2 * radius * cos(2 * i * pi /24);
+		view->y = center->y + 2 * radius * sin(2 * i * pi /24);
+		view->z = z1;
+
+		if (i % 2 == 1){
+			view->z = z2;
+		}
+
+		interpolateFrames(*init, *fin, *view);
+	}
 }
+
 void KeyCallback(unsigned char key, int x, int y)
 {
     // TO DO: Any new key press events must be added to this function
@@ -499,37 +588,11 @@ void KeyCallback(unsigned char key, int x, int y)
     glutPostRedisplay();
 }
 
-
-
-void display(){
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glColor4f(1.0,1.0,1.0,1.0);
-	glLoadIdentity();
-	//gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
-	//SetUpAndRight();
-    gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
-    			mPosition.x,mPosition.y,mPosition.z,
-              mUp.x,mUp.y,mUp.z);
-
-	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
-	//Draw_Skybox(mLookAt.x+(0.05*movcord[0]),mLookAt.y+(0.05*movcord[1]),mLookAt.z+(0.05*movcord[2]),250,250,250);
-
-	draw_ground();
-	glCallList(coasterMesh);
-	glCallList(carouselMesh);
-	glCallList(coasterBarsMesh);
-	glPushMatrix();
-
-	glutSwapBuffers();
-}
-
-
 void idle()
 {
-	MoveRollerCoaster();
-	display();
-
+	//MoveRollerCoaster();
+	MoveCarousel();
+	//display();
 }
 
 void displayReshape(int width,int height)
@@ -542,8 +605,6 @@ void displayReshape(int width,int height)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
-
-
 
 
 int main(int argc, char** argv)

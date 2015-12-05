@@ -50,7 +50,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>C:\UF\teaching\CAP5705\prep_assignments\proj1_mesh\src\include\GL;$(ProjectDir)/../libst/include;$(ProjectDir)/../libst/ext/glew/include;C:\UF\teaching\CAP5705\prep_assignments\proj1_mesh\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\stupidusmaximus\Documents\GitHub\RollerCoaster_Project\proj1_mesh\src\include\GL;$(ProjectDir)/../libst/include;$(ProjectDir)/../libst/ext/glew/include;C:\Users\stupidusmaximus\Documents\GitHub\RollerCoaster_Project\proj1_mesh\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -62,7 +62,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>glut32.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;glew.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../libst/lib/$(Configuration)/;../libst/ext/vc2008/lib/$(Configuration)/;C:\UF\teaching\CAP5705\prep_assignments\proj1_mesh\src\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../libst/lib/$(Configuration)/;../libst/ext/vc2008/lib/$(Configuration)/;C:\Users\stupidusmaximus\Documents\GitHub\RollerCoaster_Project\proj1_mesh\src\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
