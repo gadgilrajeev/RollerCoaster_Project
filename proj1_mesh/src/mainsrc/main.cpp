@@ -28,7 +28,7 @@ enum{
 int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
-int FrameRate = 15;
+int FrameRate = 30;
 
 
 STVector3 mPosition;
@@ -146,7 +146,7 @@ void BuildCoasterPosition(const char* filename){
 		float tmpx, tmpy, tmpz;
 		sscanf(coast_coord[i]->c_str(), "%f %f %f", &tmpx, &tmpy, &tmpz);
 		coast_vertex.push_back(new coordinate(tmpx, tmpy, tmpz));
-		printf("A = %f, B = %f, C = %f\n",tmpx, tmpy, tmpz);
+//		printf("A = %f, B = %f, C = %f\n",tmpx, tmpy, tmpz);
 	}
 
 }
@@ -436,16 +436,16 @@ void display(){
 	glutSwapBuffers();
 }
 
-void interpolateFrames(coordinate init, coordinate fin, coordinate view){
+void interpolateFrames(coordinate init, coordinate fin, coordinate viewInit, coordinate viewFin){
 	for (int i = 0; i < FrameRate; i++){
 		float alpha = (float)i / FrameRate;
 		mPosition.x = init.x * alpha + fin.x *(1-alpha);
 		mPosition.y = init.y * alpha + fin.y *(1-alpha);
 		mPosition.z = init.z * alpha + fin.z *(1-alpha);
 
-		mLookAt.x = fin.x * alpha + view.x * (1-alpha);
-		mLookAt.y = fin.y * alpha + view.y * (1-alpha);
-		mLookAt.z = fin.z * alpha + view.z * (1-alpha);
+		mLookAt.x = viewInit.x * alpha + viewFin.x * (1-alpha);
+		mLookAt.y = viewInit.y * alpha + viewFin.y * (1-alpha);
+		mLookAt.z = viewInit.z * alpha + viewFin.z * (1-alpha);
 		
 		display();
 	}
@@ -470,7 +470,7 @@ void MoveRollerCoaster(void){
 	coordinate init(current->x, current->y, current->z);
 	coordinate fin(next->x, next->y, next->z);
 
-	interpolateFrames(init, fin, view);
+	interpolateFrames(init, fin, fin, view);
 
 	/*mLookAt.x = next->x;
 	mLookAt.y = next->y;
@@ -482,53 +482,69 @@ void MoveRollerCoaster(void){
 
 	i++;
 
-	printf("Keyframe : %f %f %f --- %f %f %f\n",mLookAt.x,mLookAt.y,mLookAt.z,mPosition.x,mPosition.y,mPosition.z);
+//	printf("Keyframe : %f %f %f --- %f %f %f\n",mLookAt.x,mLookAt.y,mLookAt.z,mPosition.x,mPosition.y,mPosition.z);
 	//while(1);
 }
 
+void PlaceCameraAtCarousel(void){
+	mPosition = STVector3(-47.64,0.5, 40.62);
+	mLookAt	  = STVector3(-47.64,0.5, 20.31);
+}
+
 void MoveCarousel(void){
-	coordinate *center, *view, *init, *fin;
-	float radius = 4.0;
+	coordinate *center(new coordinate(-47.64, 0.5, 20.31)), *viewInit(new coordinate(0.0, 0.0, 0.0)), *viewFin(new coordinate(0.0, 0.0, 0.0)), *init(new coordinate(0.0, 0.0, 0.0)), *fin(new coordinate(0.0, 0.0, 0.0));
+	float radius = 6.81;
 	float pi = 3.1415;
 
-	center = &coordinate(0, 0, 0);
+	float z1 = 0.5;
+	float z2 = 1.5;
 
-	float z1 = 2.0;
-	float z2 = 4.0;
+	static int i = 0;
 
-	int i = 0;
-
-	while(true){
-		if(i >= 22){
-			i = 0;
-		}
-
-		init->x = center->x + radius * cos(2 * i * pi /24);
-		init->y = center->y + radius * sin(2 * i * pi /24);
-		init->z = z1;
-
-		if (i % 2 == 1){
-			init->z = z2;
-		}
-
-		fin->x = center->x + radius * cos(2 * (i+1) * pi /24);
-		fin->y = center->y + radius * sin(2 * (i+1) * pi /24);
-		fin->z = z2;
-
-		if (i % 2 == 1){
-			fin->z = z1;
-		}
-
-		view->x = center->x + 2 * radius * cos(2 * i * pi /24);
-		view->y = center->y + 2 * radius * sin(2 * i * pi /24);
-		view->z = z1;
-
-		if (i % 2 == 1){
-			view->z = z2;
-		}
-
-		interpolateFrames(*init, *fin, *view);
+	if(-1*i >= 22){
+		i = 0;
 	}
+
+	init->x = center->x + radius * cos(15 * i * pi/180);
+	init->y = -z1;
+	init->z = center->z + radius * sin(15 * i * pi/180);
+	
+
+	if (-1*i % 2 == 1){
+		init->y = -z2;
+	}
+
+	fin->x = center->x + radius * cos(15 * (i+1) * pi/180);
+	fin->z = center->z + radius * sin(15 * (i+1) * pi/180);
+	fin->y = -z2;
+
+	if (-1*i % 2 == 1){
+		fin->y = -z1;
+	}
+
+	viewInit->x = center->x + 2 * radius * cos(15 * i * pi/180);
+	viewInit->z = center->z + 2 * radius * sin(15 * i * pi/180);
+	viewInit->y = -z1;
+
+	if (-1*i % 2 == 1){
+		viewInit->y = -z2;
+	}
+
+	viewFin->x = center->x + 2 * radius * cos(15 * (i+1) * pi/180);
+	viewFin->z = center->z + 2 * radius * sin(15 * (i+1) * pi/180);
+	viewFin->y = -z2;
+
+	if (-1*i % 2 == 1){
+		viewFin->y = -z1;
+	}
+
+	std::cout << i << "\n";
+	std::cout << "View: " << viewInit->x << " " << viewInit->y << " " << viewInit->z << "\n";
+	std::cout << "View Final: " << viewFin->x << " " << viewFin->y << " " << viewFin->z << "\n";
+
+	interpolateFrames(*viewInit, *viewFin, *init, *fin);
+
+	i--;
 }
 
 void KeyCallback(unsigned char key, int x, int y)
