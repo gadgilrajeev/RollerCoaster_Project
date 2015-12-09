@@ -41,11 +41,9 @@ STVector3 mUp;
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
-int coasterMesh, coasterBarsMesh,carouselMesh;
+int coasterMesh, coasterBarsMesh,carouselMesh, carouselHorses, carouselOthers;
 int show_menu = 1;
-GLuint Texture1;
-GLuint Texture2;
-GLuint Texture3;
+GLuint Texture1, Texture2, Texture3, Texture4, Texture5;
 
 struct coordinate{
 	float x, y, z;
@@ -254,6 +252,7 @@ int loadMyObject(const char* filename, GLuint Texture){
 	glNewList(num, GL_COMPILE);
 
 	for(int i = 0; i < faces.size(); i++){
+		glShadeModel(GL_SMOOTH);
 		if (faces[i]->four){
 			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, Texture);
@@ -524,13 +523,15 @@ void display(){
 		Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
 
 		draw_ground();
-		glCallList(coasterBarsMesh);
 
+		glCallList(coasterBarsMesh);
 		glCallList(coasterMesh);
 
 		glTranslatef(-47.64,0.5, 20.62);
 		glRotatef(15*i/FrameRate,0,1,0);
 		glTranslatef(47.64,-0.5, -20.62);
+		glCallList(carouselHorses);
+		glCallList(carouselOthers);
 		glCallList(carouselMesh);
 		glPopMatrix();
 	}
@@ -759,11 +760,19 @@ int main(int argc, char** argv)
 		BuildCoasterPosition("OBJ/Barlocations.txt");
 	    resetCamera();
 		initEnvironment();
+
 		Texture1 = LoadSkyboxFile("../../data/images/wood.bmp", 2);
 		Texture2 = LoadSkyboxFile("../../data/images/metal.bmp", 3);
-		carouselMesh = loadMyObject("OBJ/merryGoRound.obj", Texture1);
+		Texture3 = LoadSkyboxFile("../../data/images/red.bmp", 4);
+		Texture4 = LoadSkyboxFile("../../data/images/brown.bmp", 5);
+		Texture5 = LoadSkyboxFile("../../data/images/black.bmp", 6);
+
+		carouselMesh = loadMyObject("OBJ/CarouselUmbrella.obj", Texture3);
+		carouselHorses = loadMyObject("OBJ/CarouselHorses.obj", Texture4);
+		carouselOthers = loadMyObject("OBJ/CarouselOthers.obj", Texture5);
 		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj", Texture2);
 		coasterBarsMesh = loadMyObject("OBJ/CoasterBars.obj", Texture1);
+
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 	    glutSpecialFunc(SpecialKeyCallback);
