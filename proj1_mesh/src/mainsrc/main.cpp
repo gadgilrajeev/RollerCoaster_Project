@@ -1,6 +1,6 @@
 #include <stdlib.h>
-//#include <GL/glut.h>
-#include <glut.h>
+#include <GL/glut.h>
+//#include <glut.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
@@ -29,7 +29,7 @@ int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
 int FrameRate = 15;
-int help = 1;
+int help = 0;
 int moveRoller 	 = 0;
 int moveCarousel = 0;
 int MoveCarouselFree = 0;
@@ -498,12 +498,9 @@ void initLights()
 void drawText(char *string,float x,float y,float z)
 {
 	char *c;
-	glRasterPos3f(x, y,z);
+	glRasterPos3f(x,y,z);
 	for (c=string; *c != '\0'; c++)
 	{
-		if(*c=='\n')
-		glRasterPos3f(x, y-0.05,z);
-		else
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
 	}
 }
@@ -519,14 +516,24 @@ void display(){
 		glPushMatrix();
 		glColor4f(1.0,1.0,0.0,1.0);
 		glDisable(GL_LIGHTING);
+		resetCamera();
+		resetUp();
+		SetUpAndRight();
 		gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
 	    			mPosition.x,mPosition.y,mPosition.z,
 	              mUp.x,mUp.y,mUp.z);
-		drawText((char*)"Amusement Park", 0,0.45,0.82);
-		drawText((char*)"Welcome to the amusement park. \nUse the following keys for movement and action controls:", 0,0.4,0.82);
-		drawText((char*)"* LEFT and RIGHT arrow: Look Around 360 degrees", 0,0.30,0.82);
-		drawText((char*)"* UP and DOWN arrow: Move forward and backward", 0,0.25,0.82);
-		drawText((char*)"Developed by Sai and Rajeev", 0,0.2,0.82);
+		drawText((char*)" Amusement Park", 0,0.35,0.82);
+		drawText((char*)" Welcome to the Amusement Park.", 0.001,0.3,0.82);
+		drawText((char*)" h: Help", 0.005,0.25,0.82);
+		drawText((char*)" v: Moving Carousel", 0.01,0.20,0.82);
+		drawText((char*)" + and - arrow: Sit on Carousel and Sit on the Roller Coaster", 0.02,0.15,0.82);
+		drawText((char*)" w and x arrow: Move forward and backward", 0.02,0.10,0.82);
+		drawText((char*)" e and f arrow: Look Around 360 degrees", 0.02,0.05,0.82);
+		drawText((char*)" y and z arrow: Move forward and backward", 0.03,0.0,0.82);
+		drawText((char*)" s: Take a screen shot", 0.03,-0.05,0.82);
+		drawText((char*)" i: Increase Interpolating Frames", 0.04,-0.10,0.82);
+		drawText((char*)" d: Decrease Interpolating Frames", 0.04,-0.15,0.82);
+		drawText((char*)" Developed by Sai and Rajeev", 0.05,-0.2,0.82);
 		glEnable(GL_LIGHTING);
 		glPopMatrix();
 	}
