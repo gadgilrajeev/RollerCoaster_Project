@@ -1,5 +1,6 @@
 #include <stdlib.h>
-#include <glut.h>
+#include <GL/glut.h>
+//#include <glut.h>
 #include <stdio.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
@@ -414,26 +415,31 @@ void SpecialKeyCallback(int key, int x, int y)
 }
 
 void display(){
-
+	static int i = 0, j = 0;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glColor4f(1.0,1.0,1.0,1.0);
 	glLoadIdentity();
+	glColor4f(1.0,1.0,1.0,1.0);
+
 	//gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
 	//SetUpAndRight();
     gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
-    			mPosition.x,mPosition.y,mPosition.z,
+    		  mPosition.x,mPosition.y,mPosition.z,
               mUp.x,mUp.y,mUp.z);
-
+    glPushMatrix();
 	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
-	//Draw_Skybox(mLookAt.x+(0.05*movcord[0]),mLookAt.y+(0.05*movcord[1]),mLookAt.z+(0.05*movcord[2]),250,250,250);
 
 	draw_ground();
-	glCallList(coasterMesh);
-	glCallList(carouselMesh);
-	glCallList(coasterBarsMesh);
-	glPushMatrix();
+	//glCallList(coasterBarsMesh);
 
+	glCallList(coasterMesh);
+
+	glTranslatef(-47.64,0.5, 20.62);
+	glRotatef(15*i/FrameRate,0,1,0);
+	glTranslatef(47.64,-0.5, -20.62);
+	glCallList(carouselMesh);
+	glPopMatrix();
 	glutSwapBuffers();
+	i++;
 }
 
 void interpolateFrames(coordinate init, coordinate fin, coordinate viewInit, coordinate viewFin){
@@ -493,11 +499,11 @@ void PlaceCameraAtCarousel(void){
 
 void MoveCarousel(void){
 	coordinate *center(new coordinate(-47.64, 0.5, 20.31)), *viewInit(new coordinate(0.0, 0.0, 0.0)), *viewFin(new coordinate(0.0, 0.0, 0.0)), *init(new coordinate(0.0, 0.0, 0.0)), *fin(new coordinate(0.0, 0.0, 0.0));
-	float radius = 6.81;
+	float radius = 6.41;
 	float pi = 3.1415;
 
-	float z1 = 0.5;
-	float z2 = 1.5;
+	float z1 = -0.7;
+	float z2 = -1.7;
 
 	static int i = 0;
 
@@ -521,26 +527,36 @@ void MoveCarousel(void){
 	if (-1*i % 2 == 1){
 		fin->y = -z1;
 	}
+	viewInit->x = -47.64;
+	viewInit->y = 0.5;
+	viewInit->z = 20.31;
 
-	viewInit->x = center->x + 2 * radius * cos(15 * i * pi/180);
+	viewFin->x = -47.64;
+	viewFin->y = 0.5;
+	viewFin->z = 20.31;/*	viewInit->x = center->x + 2 * radius * cos(15 * i * pi/180);
 	viewInit->z = center->z + 2 * radius * sin(15 * i * pi/180);
+	viewInit->y = -z1;*/
+
+	/*viewInit->x = center->x + radius * cos(15 * (i+1) * pi/180);
+	viewInit->z = center->z + radius * sin(15 * (i+1) * pi/180);
 	viewInit->y = -z1;
+
 
 	if (-1*i % 2 == 1){
 		viewInit->y = -z2;
 	}
 
-	viewFin->x = center->x + 2 * radius * cos(15 * (i+1) * pi/180);
-	viewFin->z = center->z + 2 * radius * sin(15 * (i+1) * pi/180);
+	viewFin->x = center->x + radius * cos(15 * (i+2) * pi/180);
+	viewFin->z = center->z + radius * sin(15 * (i+2) * pi/180);
 	viewFin->y = -z2;
 
 	if (-1*i % 2 == 1){
 		viewFin->y = -z1;
-	}
+	}*/
 
-	std::cout << i << "\n";
-	std::cout << "View: " << viewInit->x << " " << viewInit->y << " " << viewInit->z << "\n";
-	std::cout << "View Final: " << viewFin->x << " " << viewFin->y << " " << viewFin->z << "\n";
+	//std::cout << i << "\n";
+	//std::cout << "View: " << viewInit->x << " " << viewInit->y << " " << viewInit->z << "\n";
+	//std::cout << "View Final: " << viewFin->x << " " << viewFin->y << " " << viewFin->z << "\n";
 
 	interpolateFrames(*viewInit, *viewFin, *init, *fin);
 
@@ -616,7 +632,6 @@ void displayReshape(int width,int height)
 	glViewport(0,0,width,height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-//	gluPerspective(65,(GLfloat)width/(GLfloat)height,0.01f,1000.0f);
 	gluPerspective(65, (GLfloat)width/(GLfloat)height, 0.0f, 100.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -632,14 +647,14 @@ int main(int argc, char** argv)
 		BuildCoasterPosition("OBJ/Barlocations.txt");
 	    resetCamera();
 		initEnvironment();
-		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
 		carouselMesh = loadMyObject("OBJ/merryGoRound.obj");
+		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
 		coasterBarsMesh = loadMyObject("OBJ/CoasterBars.obj");
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 	    glutSpecialFunc(SpecialKeyCallback);
 	    glutKeyboardFunc(KeyCallback);
-  		glutDisplayFunc(display);
+  		//glutDisplayFunc(display);
   		glutIdleFunc(idle);
 		glutMainLoop();
 		return 0;
