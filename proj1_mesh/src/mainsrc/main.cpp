@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include <GL/glut.h>
-//#include <glut.h>
+//#include <GL/glut.h>
+#include <glut.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
@@ -75,7 +75,7 @@ std::vector<coordinate*> coast_vertex;
 void PlaceCameraAtRollerCoaster(void){
 	mPosition = STVector3(7.5,0.5,25);
 	mLookAt	  = STVector3(7.5,0.5,23);
-	//mUp		  = STVector3(0.0,0.0,1.0);
+	mUp		  = STVector3(0.0,-1.0,0.0);
 }
 
 void SetUpAndRight()
@@ -544,9 +544,9 @@ void display(){
 		//drawText((char*)"FrameRate", mLookAt.x-40,mLookAt.y+40,mLookAt.z);
 		glCallList(coasterMesh);
 		glCallList(coasterBarsMesh);
-		glTranslatef(-47.64,0.5, 20.62);
+		glTranslatef(-47.65778,0.5, 20.34678);
 		glRotatef(15*i/FrameRate,0,1,0);
-		glTranslatef(47.64,-0.5, -20.62);
+		glTranslatef(47.65778,-0.5, -20.34678);
 		glCallList(carouselHorses);
 		glCallList(carouselOthers);
 		glCallList(carouselMesh);
@@ -568,6 +568,9 @@ void interpolateFrames(coordinate init, coordinate fin, coordinate viewInit, coo
 		mLookAt.y = viewInit.y * alpha + viewFin.y * (1-alpha);
 		mLookAt.z = viewInit.z * alpha + viewFin.z * (1-alpha);
 		
+		if(moveRoller){
+			SetUpAndRight();
+		}
 		display();
 	}
 }
@@ -585,6 +588,7 @@ void MoveRollerCoaster(void){
 		further = coast_vertex.at(i);
 		next = coast_vertex.at(i+1);
 		current = coast_vertex.at(i+2);
+		resetUp();
 	}
 
 	coordinate view(further->x, further->y, further->z);
@@ -614,7 +618,7 @@ void PlaceCameraAtCarousel(void){
 
 void MoveCarousel(void){
 	coordinate *center(new coordinate(-47.64, 0.5, 20.31)), *viewInit(new coordinate(0.0, 0.0, 0.0)), *viewFin(new coordinate(0.0, 0.0, 0.0)), *init(new coordinate(0.0, 0.0, 0.0)), *fin(new coordinate(0.0, 0.0, 0.0));
-	float radius = 6.41;
+	float radius = 6.30;
 	float pi = 3.1415;
 
 	float z1 = -0.7;
@@ -622,7 +626,7 @@ void MoveCarousel(void){
 
 	static int i = 0;
 
-	if(-1*i >= 22){
+	if(-1*i >= 24){
 		i = 0;
 	}
 
@@ -704,6 +708,8 @@ void KeyCallback(unsigned char key, int x, int y)
     		moveCarousel = 0;
     		MoveCarouselFree = 0;
     	}
+		moveRoller = 0;
+		resetUp();
     	break;
     case '+':
     	moveRoller = 1;
@@ -713,6 +719,7 @@ void KeyCallback(unsigned char key, int x, int y)
     	break;
     case '-':
     	moveRoller = 0;
+		resetUp();
     	moveCarousel = 1;
     	MoveCarouselFree = 0;
     	MoveCarousel();
