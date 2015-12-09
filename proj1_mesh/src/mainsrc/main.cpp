@@ -29,8 +29,10 @@ enum{
 int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
-int FrameRate = 30;
-
+int FrameRate = 90;
+int help = 1;
+int moveRoller 	 = 0;
+int moveCarousel = 0;
 
 STVector3 mPosition;
 STVector3 mLookAt;
@@ -414,30 +416,60 @@ void SpecialKeyCallback(int key, int x, int y)
     glutPostRedisplay();
 }
 
+void drawText(char *string,float x,float y,float z)
+{
+	char *c;
+	glRasterPos3f(x, y,z);
+	for (c=string; *c != '\0'; c++)
+	{
+		if(*c=='\n')
+		glRasterPos3f(x, y-0.05,z);
+		else
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
+	}
+}
+
 void display(){
-	static int i = 0, j = 0;
+	static int i = 0;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
 	glColor4f(1.0,1.0,1.0,1.0);
+	glLoadIdentity();
 
-	//gluLookAt(viewer[0], viewer[1], viewer[2],camera[0], camera[1], camera[2],0, 1, 0);
-	//SetUpAndRight();
-    gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
-    		  mPosition.x,mPosition.y,mPosition.z,
-              mUp.x,mUp.y,mUp.z);
-    glPushMatrix();
-	Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
+	if(help)
+	{
+		glPushMatrix();
+		gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
+	    			mPosition.x,mPosition.y,mPosition.z,
+	              mUp.x,mUp.y,mUp.z);
+		glColor4f(1.0,0.0,0.0,1.0);
+		drawText((char*)"Amusement Park", 7.5,0.5,23);
+		drawText((char*)"Welcome to the amusement park. \nUse the following keys for movement and action controls:", 0,0.4,0.82);
+		drawText((char*)"* LEFT and RIGHT arrow: Look Around 360 degrees", 0,0.30,0.82);
+		drawText((char*)"* UP and DOWN arrow: Move forward and backward", 0,0.25,0.82);
+		drawText((char*)"Developed by Sai and Rajeev", 0,0.2,0.82);
+		glPopMatrix();
+	}
+	else
+	{
 
-	draw_ground();
-	//glCallList(coasterBarsMesh);
+	    glPushMatrix();
 
-	glCallList(coasterMesh);
+		gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
+		mPosition.x,mPosition.y,mPosition.z,
+		mUp.x,mUp.y,mUp.z);
+		Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
 
-	glTranslatef(-47.64,0.5, 20.62);
-	glRotatef(15*i/FrameRate,0,1,0);
-	glTranslatef(47.64,-0.5, -20.62);
-	glCallList(carouselMesh);
-	glPopMatrix();
+		draw_ground();
+		//glCallList(coasterBarsMesh);
+
+		glCallList(coasterMesh);
+
+		glTranslatef(-47.64,0.5, 20.62);
+		glRotatef(15*i/FrameRate,0,1,0);
+		glTranslatef(47.64,-0.5, -20.62);
+		glCallList(carouselMesh);
+		glPopMatrix();
+	}
 	glutSwapBuffers();
 	i++;
 }
@@ -567,10 +599,21 @@ void KeyCallback(unsigned char key, int x, int y)
 {
     // TO DO: Any new key press events must be added to this function
     switch(key) {
+    case 'h':
+    	if(help == 1)
+    		help = 0;
+    	else
+    		help = 1;
+    	break;
     case '+':
+    	moveRoller = 1;
+    	moveCarousel = 0;
     	MoveRollerCoaster();
     	break;
     case '-':
+    	moveRoller = 0;
+    	moveCarousel = 1;
+
     	MoveCarousel();
     	break;
     case 'b':
@@ -622,9 +665,14 @@ void KeyCallback(unsigned char key, int x, int y)
 
 void idle()
 {
-	//MoveRollerCoaster();
-	MoveCarousel();
-	//display();
+	if(help == 1)
+		display();
+	else{
+		if(moveRoller == 1)
+			MoveRollerCoaster();
+		if(moveCarousel == 1)
+			MoveCarousel();
+	}
 }
 
 void displayReshape(int width,int height)
@@ -654,7 +702,7 @@ int main(int argc, char** argv)
 	 	glutReshapeFunc(displayReshape);
 	    glutSpecialFunc(SpecialKeyCallback);
 	    glutKeyboardFunc(KeyCallback);
-  		//glutDisplayFunc(display);
+  		glutDisplayFunc(display);
   		glutIdleFunc(idle);
 		glutMainLoop();
 		return 0;
