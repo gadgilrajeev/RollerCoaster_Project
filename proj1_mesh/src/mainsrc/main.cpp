@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include <GL/glut.h>
-//#include <glut.h>
+//#include <GL/glut.h>
+#include <glut.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
@@ -41,9 +41,9 @@ STVector3 mUp;
 GLint skybox[6], grass,x_r=0, y_r=0, z_r=0;
 GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
-int coasterMesh, coasterBarsMesh,carouselMesh, carouselHorses, carouselOthers;
+int coasterMesh, coasterBarsMesh,carouselMesh, carouselHorses, carouselOthers, tent, text, shops, fence;
 int show_menu = 1;
-GLuint Texture1, Texture2, Texture3, Texture4, Texture5;
+GLuint Texture1, Texture2, Texture3, Texture4, Texture5, Texture6, Texture7, Texture8, Texture9;
 
 struct coordinate{
 	float x, y, z;
@@ -257,7 +257,7 @@ int loadMyObject(const char* filename, GLuint Texture){
 			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, Texture);
 			glBegin(GL_QUADS);
-				glColor3f(0.5, 0.5, 0.5);
+			//	glColor3f(0.5, 0.5, 0.5);
 				glNormal3f(normals[faces[i]->facenum - 1]->x, normals[faces[i]->facenum - 1]->y, normals[faces[i]->facenum - 1]->z);
 
 				glTexCoord2f(0.0, 0.0);
@@ -547,10 +547,15 @@ void display(){
 		mUp.x,mUp.y,mUp.z);
 		Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
 		draw_ground();
+
+		glCallList(tent);
+		glCallList(text);
+		glCallList(shops);
+		glCallList(fence);
 		glCallList(coasterBarsMesh);
 		//drawText((char*)"FrameRate", mLookAt.x-40,mLookAt.y+40,mLookAt.z);
 		glCallList(coasterMesh);
-		glCallList(coasterBarsMesh);
+		//glCallList(coasterBarsMesh);
 		glTranslatef(-47.65778,0.5, 20.34678);
 		glRotatef(15*i/FrameRate,0,1,0);
 		glTranslatef(47.65778,-0.5, -20.34678);
@@ -842,6 +847,10 @@ int main(int argc, char** argv)
 		Texture4 = LoadSkyboxFile("../../data/images/brown.bmp", 5);
 		Texture5 = LoadSkyboxFile("../../data/images/black.bmp", 6);
 
+		tent = loadMyObject("OBJ/Tents.obj", Texture3);
+		text = loadMyObject("OBJ/Text.obj", Texture5);
+		shops = loadMyObject("OBJ/Shops.obj", Texture2);
+		fence = loadMyObject("OBJ/Fence.obj", Texture1);
 		carouselMesh = loadMyObject("OBJ/CarouselUmbrella.obj", Texture3);
 		carouselHorses = loadMyObject("OBJ/CarouselHorses.obj", Texture4);
 		carouselOthers = loadMyObject("OBJ/CarouselOthers.obj", Texture5);
