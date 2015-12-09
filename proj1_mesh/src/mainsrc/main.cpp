@@ -1,6 +1,6 @@
 #include <stdlib.h>
-//#include <GL/glut.h>
-#include <glut.h>
+#include <GL/glut.h>
+//#include <glut.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
@@ -28,11 +28,11 @@ enum{
 int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
-int FrameRate = 30;
+int FrameRate = 15;
 int help = 1;
 int moveRoller 	 = 0;
 int moveCarousel = 0;
-
+int MoveCarouselFree = 0;
 STVector3 mPosition;
 STVector3 mLookAt;
 STVector3 mRight;
@@ -88,7 +88,7 @@ void SetUpAndRight()
 
 void resetCamera()
 {
-    mLookAt=STVector3(1.f,0.f,0.f);
+    mLookAt=STVector3(1.f,0.1f,0.f);
     mPosition=STVector3(0.f,0.f,0.f);
     mUp=STVector3(0.f,1.f,0.f);
 
@@ -257,7 +257,7 @@ int loadMyObject(const char* filename, GLuint Texture){
 			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, Texture);
 			glBegin(GL_QUADS);
-			//	glColor3f(0.5, 0.5, 0.5);
+				glColor3f(0.5, 0.5, 0.5);
 				glNormal3f(normals[faces[i]->facenum - 1]->x, normals[faces[i]->facenum - 1]->y, normals[faces[i]->facenum - 1]->z);
 
 				glTexCoord2f(0.0, 0.0);
@@ -479,6 +479,22 @@ void SpecialKeyCallback(int key, int x, int y)
     glutPostRedisplay();
 }
 
+void initLights()
+{
+
+	GLfloat whiteSpecularMaterial[] = {1.0,1.0,1.0},light_post0[]={0.0,0.0,10.0,1.0},whiteSpecularLight[] = {1.0, 1.0, 1.0},blackAmbientLight[] = {0.3, 0.3, 0.3},whiteDiffuseLight[] = {1.0, 1.0, 1.0},mShininess[] = {50},twoModel[]={GL_TRUE};
+	glEnable (GL_DEPTH_TEST);
+    glEnable (GL_LIGHTING);
+    glEnable (GL_LIGHT0);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, whiteSpecularLight);
+   	glLightfv(GL_LIGHT0, GL_AMBIENT, blackAmbientLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteDiffuseLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, light_post0);
+	glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, twoModel);
+ 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, whiteSpecularMaterial);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mShininess);
+}
+
 void drawText(char *string,float x,float y,float z)
 {
 	char *c;
@@ -501,38 +517,40 @@ void display(){
 	if(help)
 	{
 		glPushMatrix();
+		glColor4f(1.0,1.0,0.0,1.0);
+		glDisable(GL_LIGHTING);
 		gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
 	    			mPosition.x,mPosition.y,mPosition.z,
 	              mUp.x,mUp.y,mUp.z);
-		glColor4f(1.0,0.0,0.0,1.0);
-		drawText((char*)"Amusement Park", 7.5,0.5,23);
+		drawText((char*)"Amusement Park", 0,0.45,0.82);
 		drawText((char*)"Welcome to the amusement park. \nUse the following keys for movement and action controls:", 0,0.4,0.82);
 		drawText((char*)"* LEFT and RIGHT arrow: Look Around 360 degrees", 0,0.30,0.82);
 		drawText((char*)"* UP and DOWN arrow: Move forward and backward", 0,0.25,0.82);
 		drawText((char*)"Developed by Sai and Rajeev", 0,0.2,0.82);
+		glEnable(GL_LIGHTING);
 		glPopMatrix();
 	}
 	else
 	{
-
 	    glPushMatrix();
-
+		//glColor4f(1.0,1.0,0.0,1.0);
+		glDisable(GL_LIGHTING);
 		gluLookAt(mLookAt.x,mLookAt.y,mLookAt.z,
 		mPosition.x,mPosition.y,mPosition.z,
 		mUp.x,mUp.y,mUp.z);
 		Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
-
 		draw_ground();
-
 		glCallList(coasterBarsMesh);
+		//drawText((char*)"FrameRate", mLookAt.x-40,mLookAt.y+40,mLookAt.z);
 		glCallList(coasterMesh);
-
+		glCallList(coasterBarsMesh);
 		glTranslatef(-47.64,0.5, 20.62);
 		glRotatef(15*i/FrameRate,0,1,0);
 		glTranslatef(47.64,-0.5, -20.62);
 		glCallList(carouselHorses);
 		glCallList(carouselOthers);
 		glCallList(carouselMesh);
+		glEnable(GL_LIGHTING);
 		glPopMatrix();
 	}
 	glutSwapBuffers();
@@ -624,13 +642,15 @@ void MoveCarousel(void){
 	if (-1*i % 2 == 1){
 		fin->y = -z1;
 	}
+
 	viewInit->x = -47.64;
 	viewInit->y = 0.5;
 	viewInit->z = 20.31;
 
 	viewFin->x = -47.64;
 	viewFin->y = 0.5;
-	viewFin->z = 20.31;/*	viewInit->x = center->x + 2 * radius * cos(15 * i * pi/180);
+	viewFin->z = 20.31;
+	/*	viewInit->x = center->x + 2 * radius * cos(15 * i * pi/180);
 	viewInit->z = center->z + 2 * radius * sin(15 * i * pi/180);
 	viewInit->y = -z1;*/
 
@@ -670,15 +690,31 @@ void KeyCallback(unsigned char key, int x, int y)
     	else
     		help = 1;
     	break;
+    case 'v':
+    	if(MoveCarouselFree == 1){
+    		moveCarousel = 1;
+    		MoveCarouselFree = 0;
+    	}
+    	else if(MoveCarouselFree == 0){
+    		moveCarousel = 0;
+    		MoveCarouselFree = 1;
+    		//MoveCarousel();
+    	}
+    	else{
+    		moveCarousel = 0;
+    		MoveCarouselFree = 0;
+    	}
+    	break;
     case '+':
     	moveRoller = 1;
     	moveCarousel = 0;
+    	MoveCarouselFree = 0;
     	MoveRollerCoaster();
     	break;
     case '-':
     	moveRoller = 0;
     	moveCarousel = 1;
-
+    	MoveCarouselFree = 0;
     	MoveCarousel();
     	break;
     case 'b':
@@ -719,6 +755,16 @@ void KeyCallback(unsigned char key, int x, int y)
     case 'u':
         resetUp();
         break;
+    case 'i':
+    		FrameRate++;
+    		if(FrameRate > 100)
+    			FrameRate = 100;
+    	break;
+    case 'd':
+        	FrameRate--;
+        	if(FrameRate < 1)
+        		FrameRate = 1;
+        break;
 	case 'q':
 		exit(0);
     default:
@@ -730,7 +776,7 @@ void KeyCallback(unsigned char key, int x, int y)
 
 void idle()
 {
-	if(help == 1)
+	if(help == 1 || MoveCarouselFree == 1)
 		display();
 	else{
 		if(moveRoller == 1)
@@ -749,6 +795,20 @@ void displayReshape(int width,int height)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
+void addMouseClickStuff()
+{
+	int submenu1,submenu2,submenu21, submenu22,submenu3, submenu31, submenu32, submenu4, submenu41;
+	//submenu1 = glutCreateMenu(PlaceCameraAtCarousel);
+	glutAddMenuEntry("Free Movement",0);
+	glutAddMenuEntry("Inside Giant Wheel",1);
+	glutAddMenuEntry("On Columbus ship",2);
+	glutAddMenuEntry("On Roller Coaster",3);
+	glutAddMenuEntry("Change Background",0);
+	glutAddMenuEntry("Show/hide Help",1);
+	glutAddMenuEntry("Quit",2);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+}
 
 
 int main(int argc, char** argv)
@@ -759,6 +819,7 @@ int main(int argc, char** argv)
 		glutCreateWindow("CAP5705 Project");
 		BuildCoasterPosition("OBJ/Barlocations.txt");
 	    resetCamera();
+	    //initLights();
 		initEnvironment();
 
 		Texture1 = LoadSkyboxFile("../../data/images/wood.bmp", 2);
@@ -779,6 +840,7 @@ int main(int argc, char** argv)
 	    glutKeyboardFunc(KeyCallback);
   		glutDisplayFunc(display);
   		glutIdleFunc(idle);
+  		addMouseClickStuff();
 		glutMainLoop();
 		return 0;
 }
