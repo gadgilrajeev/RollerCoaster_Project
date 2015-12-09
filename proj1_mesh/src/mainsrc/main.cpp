@@ -1,7 +1,6 @@
 #include <stdlib.h>
-#include <GL/glut.h>
-//#include <glut.h>
-#include <stdio.h>
+//#include <GL/glut.h>
+#include <glut.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
@@ -12,8 +11,8 @@
 #include <string>
 #include <algorithm>
 #include <stdio.h>
-#include <fstream>
 #include <math.h>
+#include <fstream>
 #include "../libst/include/STVector3.h"
 #include "../libst/include/STImage.h"
 #include "../libst/include/STMatrix4.h"
@@ -29,7 +28,7 @@ enum{
 int gPreviousMouseX = -1;
 int gPreviousMouseY = -1;
 int gMouseButton = -1;
-int FrameRate = 90;
+int FrameRate = 30;
 int help = 1;
 int moveRoller 	 = 0;
 int moveCarousel = 0;
@@ -44,6 +43,10 @@ GLfloat viewer[3] = {1.0f, 0.0f, 0.0f},camera[3] = {0.0f, 0.0, 0.0};
 GLdouble movcord[3]={-150,-10,200};
 int coasterMesh, coasterBarsMesh,carouselMesh;
 int show_menu = 1;
+GLuint Texture1;
+GLuint Texture2;
+GLuint Texture3;
+
 struct coordinate{
 	float x, y, z;
 	coordinate(float a, float b, float c): x(a),y(b),z(c) {};
@@ -154,7 +157,58 @@ void BuildCoasterPosition(const char* filename){
 
 }
 
-int loadMyObject(const char* filename){
+/*GLuint LoadTexture(char* fileName){
+	GLuint ID;
+	unsigned char *img;
+	int height, width;
+
+
+	img = NULL;
+
+	tagBITMAPFILEHEADER fh;
+	tagBITMAPINFOHEADER infoh;
+	FILE *fp = fopen(fileName, "rb");
+
+	if(!fp){
+		printf("\nFailed to read Bitmap");
+		return -1;
+	}
+
+	fread(&fh, sizeof(fh), 1, fp);
+	fread(&infoh, sizeof(infoh), 1, fp);
+
+	if(infoh.biBitCount != 24){
+		printf("\n File not 24 bit BMP file");
+		return -1;
+	}
+
+	width = infoh.biWidth;
+	height = infoh.biHeight;
+
+	img = new unsigned char(infoh.biSizeImage);
+
+	fread(img, infoh.biSizeImage, 1, fp);
+
+	unsigned char temp;
+
+	for(int i = 0; i < infoh.biSizeImage; i++){
+		temp = img[i];
+		img[i] = img[i+2];
+		img[i+2] = temp;
+		i += 2;
+	}
+
+	glGenTextures(1, &ID);
+	glBindTexture(GL_TEXTURE_2D, ID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, img);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	
+	return ID;
+}*/
+
+int loadMyObject(const char* filename, GLuint Texture){
 	std::vector<std::string*> coord;
 	std::vector<coordinate*> vertex;
 	std::vector<face*> faces;
@@ -201,12 +255,22 @@ int loadMyObject(const char* filename){
 
 	for(int i = 0; i < faces.size(); i++){
 		if (faces[i]->four){
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, Texture);
 			glBegin(GL_QUADS);
-				glColor3f(0.5, 0.5, 0.5);
+			//	glColor3f(0.5, 0.5, 0.5);
 				glNormal3f(normals[faces[i]->facenum - 1]->x, normals[faces[i]->facenum - 1]->y, normals[faces[i]->facenum - 1]->z);
+
+				glTexCoord2f(0.0, 0.0);
 				glVertex3f(vertex[faces[i]->faces[0] - 1]->x, vertex[faces[i]->faces[0] - 1]->y, vertex[faces[i]->faces[0] - 1]->z);
+
+				glTexCoord2f(1.0, 0.0);
 				glVertex3f(vertex[faces[i]->faces[1] - 1]->x, vertex[faces[i]->faces[1] - 1]->y, vertex[faces[i]->faces[1] - 1]->z);
+
+				glTexCoord2f(1.0, 1.0);
 				glVertex3f(vertex[faces[i]->faces[2] - 1]->x, vertex[faces[i]->faces[2] - 1]->y, vertex[faces[i]->faces[2] - 1]->z);
+
+				glTexCoord2f(0.0, 1.0);
 				glVertex3f(vertex[faces[i]->faces[3] - 1]->x, vertex[faces[i]->faces[3] - 1]->y, vertex[faces[i]->faces[3] - 1]->z);
 			glEnd();
 		} else {
@@ -237,7 +301,7 @@ int loadMyObject(const char* filename){
 	return num;
 }
 
-GLuint LoadSkyboxFile(const char *fileName)
+GLuint LoadSkyboxFile(const char *fileName, GLuint retTexture)
 {
 	FILE *file;
 	unsigned char header[54],*data;
@@ -256,7 +320,7 @@ GLuint LoadSkyboxFile(const char *fileName)
 	fread(data, 1, size, file);
 	fclose(file);
 	GLuint texture;
-	glGenTextures(1, &texture);
+	glGenTextures(retTexture, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -270,13 +334,13 @@ void initEnvironment()
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
-	skybox[SKY_DOWN] = LoadSkyboxFile("SKYBOX/down.bmp");
-	skybox[SKY_FRONT] = LoadSkyboxFile("SKYBOX/front.bmp");
-	skybox[SKY_BACK] = LoadSkyboxFile("SKYBOX/back.bmp");
-	skybox[SKY_RIGHT] = LoadSkyboxFile("SKYBOX/right.bmp");
-	skybox[SKY_LEFT] = LoadSkyboxFile("SKYBOX/left.bmp");
-	skybox[SKY_UP] = LoadSkyboxFile("SKYBOX/up.bmp");
-	grass=LoadSkyboxFile("SKYBOX/grass_1.bmp");
+	skybox[SKY_DOWN] = LoadSkyboxFile("SKYBOX/down.bmp", 1);
+	skybox[SKY_FRONT] = LoadSkyboxFile("SKYBOX/front.bmp", 1);
+	skybox[SKY_BACK] = LoadSkyboxFile("SKYBOX/back.bmp", 1);
+	skybox[SKY_RIGHT] = LoadSkyboxFile("SKYBOX/right.bmp", 1);
+	skybox[SKY_LEFT] = LoadSkyboxFile("SKYBOX/left.bmp", 1);
+	skybox[SKY_UP] = LoadSkyboxFile("SKYBOX/up.bmp", 1);
+	grass=LoadSkyboxFile("SKYBOX/grass_1.bmp", 1);
 }
 
 void Draw_Skybox(float x, float y, float z, float width, float height, float length){
@@ -344,15 +408,15 @@ void draw_ground()
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D,grass);
 	glBegin(GL_QUADS);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(5000,-10,5000);
-	glTexCoord2f(800.0f, 0.0f); glVertex3f(5000,-10,-5000);
-	glTexCoord2f(800.0f, 800.0f); glVertex3f(-5000,-10,-5000);
-	glTexCoord2f(0.0f, 800.0f); glVertex3f(-5000,-10,5000);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(5000,0,5000);
+	glTexCoord2f(800.0f, 0.0f); glVertex3f(5000,0,-5000);
+	glTexCoord2f(800.0f, 800.0f); glVertex3f(-5000,0,-5000);
+	glTexCoord2f(0.0f, 800.0f); glVertex3f(-5000,0,5000);
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 	glLineWidth(5.0);
-	glTranslatef(0.0, -2, 0.0);
-	glTranslatef(0.0, 2, 0.0);
+//	glTranslatef(0.0, -10, 0.0);
+//	glTranslatef(0.0, 2, 0.0);
 }
 
 /**
@@ -460,7 +524,7 @@ void display(){
 		Draw_Skybox(viewer[0]+(0.05*movcord[0]),viewer[1]+(0.05*movcord[1]),viewer[2]+(0.05*movcord[2]),250,250,250);
 
 		draw_ground();
-		//glCallList(coasterBarsMesh);
+		glCallList(coasterBarsMesh);
 
 		glCallList(coasterMesh);
 
@@ -695,9 +759,11 @@ int main(int argc, char** argv)
 		BuildCoasterPosition("OBJ/Barlocations.txt");
 	    resetCamera();
 		initEnvironment();
-		carouselMesh = loadMyObject("OBJ/merryGoRound.obj");
-		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj");
-		coasterBarsMesh = loadMyObject("OBJ/CoasterBars.obj");
+		Texture1 = LoadSkyboxFile("../../data/images/wood.bmp", 2);
+		Texture2 = LoadSkyboxFile("../../data/images/metal.bmp", 3);
+		carouselMesh = loadMyObject("OBJ/merryGoRound.obj", Texture1);
+		coasterMesh = loadMyObject("OBJ/rollerCoaster.obj", Texture2);
+		coasterBarsMesh = loadMyObject("OBJ/CoasterBars.obj", Texture1);
   		glutDisplayFunc(display);
 	 	glutReshapeFunc(displayReshape);
 	    glutSpecialFunc(SpecialKeyCallback);
