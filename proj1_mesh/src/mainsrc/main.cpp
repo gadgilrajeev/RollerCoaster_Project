@@ -526,10 +526,10 @@ void display(){
 		drawText((char*)" Welcome to the Amusement Park.", 0.001,0.3,0.82);
 		drawText((char*)" h: Help", 0.005,0.25,0.82);
 		drawText((char*)" v: Moving Carousel", 0.01,0.20,0.82);
-		drawText((char*)" + and - arrow: Sit on Carousel and Sit on the Roller Coaster", 0.02,0.15,0.82);
-		drawText((char*)" w and x arrow: Move forward and backward", 0.02,0.10,0.82);
-		drawText((char*)" e and f arrow: Look Around 360 degrees", 0.02,0.05,0.82);
-		drawText((char*)" y and z arrow: Move forward and backward", 0.03,0.0,0.82);
+		drawText((char*)" + and -: Sit on Carousel and Sit on the Roller Coaster", 0.02,0.15,0.82);
+		drawText((char*)" w and x: Move forward and backward", 0.02,0.10,0.82);
+		drawText((char*)" e and f: Move up and down", 0.02,0.05,0.82);
+		drawText((char*)" y and z: Move left and right", 0.03,0.0,0.82);
 		drawText((char*)" s: Take a screen shot", 0.03,-0.05,0.82);
 		drawText((char*)" i: Increase Interpolating Frames", 0.04,-0.10,0.82);
 		drawText((char*)" d: Decrease Interpolating Frames", 0.04,-0.15,0.82);
