@@ -1,6 +1,6 @@
 
 # the name of the compiled binary
-TARGET  := prog1_mesh
+TARGET  := RollerCoaster
 
 # list files to compile and link together
 FILES   := main

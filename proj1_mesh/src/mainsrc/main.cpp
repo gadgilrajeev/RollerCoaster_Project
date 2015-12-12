@@ -1,6 +1,6 @@
 #include <stdlib.h>
-//#include <GL/glut.h>
-#include <glut.h>
+#include <GL/glut.h>
+//#include <glut.h>
 #include "tiny_obj_loader.h"
 #include <iostream>
 #include <assert.h>
@@ -526,10 +526,10 @@ void display(){
 		drawText((char*)" Welcome to the Amusement Park.", 0.001,0.3,0.82);
 		drawText((char*)" h: Help", 0.005,0.25,0.82);
 		drawText((char*)" v: Moving Carousel", 0.01,0.20,0.82);
-		drawText((char*)" + and - arrow: Sit on Carousel and Sit on the Roller Coaster", 0.02,0.15,0.82);
-		drawText((char*)" w and x arrow: Move forward and backward", 0.02,0.10,0.82);
-		drawText((char*)" e and f arrow: Look Around 360 degrees", 0.02,0.05,0.82);
-		drawText((char*)" y and z arrow: Move forward and backward", 0.03,0.0,0.82);
+		drawText((char*)" + and -: Sit on Carousel and Sit on the Roller Coaster", 0.02,0.15,0.82);
+		drawText((char*)" w and x: Move forward and backward", 0.02,0.10,0.82);
+		drawText((char*)" e and f: Move up and down", 0.02,0.05,0.82);
+		drawText((char*)" y and z: Move left and right", 0.03,0.0,0.82);
 		drawText((char*)" s: Take a screen shot", 0.03,-0.05,0.82);
 		drawText((char*)" i: Increase Interpolating Frames", 0.04,-0.10,0.82);
 		drawText((char*)" d: Decrease Interpolating Frames", 0.04,-0.15,0.82);
@@ -843,7 +843,7 @@ int main(int argc, char** argv)
 
 		Texture1 = LoadSkyboxFile("../../data/images/wood.bmp", 2);
 		Texture2 = LoadSkyboxFile("../../data/images/metal.bmp", 3);
-		Texture3 = LoadSkyboxFile("../../data/images/red.bmp", 4);
+		Texture3 = LoadSkyboxFile("../../data/images/red1.bmp", 4);
 		Texture4 = LoadSkyboxFile("../../data/images/brown.bmp", 5);
 		Texture5 = LoadSkyboxFile("../../data/images/black.bmp", 6);
 
@@ -867,3 +867,4 @@ int main(int argc, char** argv)
 		glutMainLoop();
 		return 0;
 }
+

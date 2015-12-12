@@ -1,1 +1,0 @@
-bowl.obj - "(textured) 3D models from the MIT CSAIL database"
